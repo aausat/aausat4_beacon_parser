@@ -1,3 +1,4 @@
--e git+https://github.com/satlab/bbctl.git#egg=bbctl
-pyusb==1.0.0rc1
+#-e git+https://github.com/satlab/bbctl.git@f52f382221fcca1bba50c3192c7e4aa38564ef2a#egg=bbctl
+-e git+https://github.com/aausat/bbctl.git#egg=bbctl
+pyusb==1.0.0b2
 wheel==0.24.0
