@@ -77,7 +77,7 @@ class COM(object):
 class Beacon(object):
     
     def __init__(self, raw_data):
-        if len(raw_data) != 84:
+        if len(raw_data) != BEACON_LENGTH*2:
             raise InputException(len(raw_data), BEACON_LENGTH)
 
         self.subsystems = {}
