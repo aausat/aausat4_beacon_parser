@@ -1,56 +1,114 @@
-class EPS:
+from datetime import date
 
-    def __init__(self, raw_data):
-        self.boot_count = None # uint16_t
-        self.uptime = None # uint32_t
-        self.rt_clock = None # uint32_t
-        self.ping_status = None # uint8_t (?)
-        self.subsystem_selftatus = None # uint16_t
-        self.battery_voltage = None # uint8_t
-        self.call_diff = None # int8_t
-        self.battery_current = None # int8_t
-        self.solar_power = None # uint8_t
-        self.temp = None #int8_t
-        self.pa_temp = None #int8_t
-        self.main_voltage = None #int8_t
+BEACON_LENGTH = 84
+EPS_LENGTH = 20
+COM_LENGTH = 12
+
+class InputException(Exception):
+    def __init__(self, got, expected):
+        msg = "Unexpected length: got {0}, expected {1}".format(got, expected) 
+        super(Exception, self).__init__(msg)
         
-        print "Missing"
-
-class COM:
-    def __init__(self, raw_data):
-        self.boot_count = None # uint16_t
-        self.packtes_recevied = None # uint16_t
-        self.packtes_send = None # uint16_t
-        self.latest_rssi = None # uint16_t
-        self.latest_bit_correction = None # uint16_t
-        self.latest_byte_correction = None # uint16_t
+class EPS(object):
+    def __init__(self, eps_data):
+        if len(eps_data) != EPS_LENGTH*2:
+            raise InputException(len(eps_data), EPS_LENGTH)
         
-        print "Missing"
+        self.boot_count = int(eps_data[0:4], 16) # uint16_t
+        self.uptime = int(eps_data[4:12], 16) # uint32_t
+        self.rt_clock = int(eps_data[12:20], 16) # uint32_t
+        self.ping_status = int(eps_data[20:22], 16) # uint8_t (?)
+        self.subsystem_selfstatus = int(eps_data[22:26], 16) # uint16_t
+        self.battery_voltage = int(eps_data[26:28], 16) # uint8_t
+        self.call_diff = int(eps_data[28:30], 16) # int8_t
+        self.battery_current = int(eps_data[30:32], 16) # int8_t
+        self.solar_power = int(eps_data[32:34], 16) # uint8_t
+        self.temp = int(eps_data[34:36], 16) #int8_t
+        self.pa_temp = int(eps_data[36:38], 16) #int8_t
+        self.main_voltage = int(eps_data[38:40], 16) #int8_t
+
+    def __str__(self):
+        eps_str = ("""EPS:
+        Boot count:\t\t{0}
+        Up time:\t\t{1} seconds
+        Real time clock:\t{2}
+        Battery voltage:\t{3} V
+        Temperature:\t\t{4} C
+        PA temperature:\t\t{5} C""".format(
+            self.boot_count, self.uptime, self.rt_clock,
+            self.battery_voltage, self.temp, self.pa_temp))
+
+        return eps_str
 
 
+class COM(object):
+    def __init__(self, com_data):
+        self.boot_count = int(com_data[0:4], 16) # uint16_t
+        self.packets_received = int(com_data[4:8], 16) # uint16_t
+        self.packets_send = int(com_data[8:12], 16) # uint16_t
+        self.latest_rssi = int(com_data[12:16], 16) # uint16_t
+        self.latest_bit_correction = int(com_data[16:20], 16) # uint16_t
+        self.latest_byte_correction = int(com_data[20:24], 16) # uint16_t
+        
+    def __str__(self):
+        com_str = ("""COM:
+        Boot count:\t\t{0}
+        Packets received:\t{1}
+        Packets send:\t\t{2}
+        Latest rssi:\t\t{3}
+        Latest bit corrections:\t{4}
+        Latest byte corrections:{5}""".format(
+            self.boot_count, self.packets_received, self.packets_send,
+            self.latest_rssi, self.latest_bit_correction, self.latest_byte_correction))
+
+        return com_str
+
+## Beacon
+# The beacon class takes a hex string of bytes as input, and parses it to generate
+# a representation of the beacon format used by AASUAT4
+# The beacon format is as follows:
+#  [ 1 byte | 19 bytes  | 12 bytes | 7 bytes  | 6 bytes  | 20 bytes  | 20 bytes  ]
+#  [ Valid  |    EPS    |    COM   |   ADCS1  |  ADCS2   |   AIS1    |   AIS2    ]
+#
+# For each subsystem, which are valid, are the corresponding data bytes passed to another
+# class which parses the information.
+#
+# The __str__ method returns a human readable string with key information from the beacon
 class Beacon(object):
-
+    
     def __init__(self, raw_data):
-        ## Format:
-        #  [ 1 byte | 19 bytes  | 12 bytes | 7 bytes  | 6 bytes  | 20 bytes  | 20 bytes  ]
-        #  [ Valid  |    EPS    |    COM   |   ADCS1  |  ADCS2   |   AIS1    |   AIS2    ]
-        
         if len(raw_data) != 84:
-            raise Exception("Unexpected length (%s)" % len(raw_data))
+            raise InputException(len(raw_data), BEACON_LENGTH)
 
-        valid = raw_data[0]
-        eps_raw = raw_data[1:20]
-        com_raw = raw_data[20:32]
-        adcs1_raw = raw_data[32:39]
-        adcs2_raw = raw_data[39:35]
-        ais1_raw = raw_data[35:55]
-        ais2_raw = raw_data[55:75]
-
+        self.subsystems = {}
         
-        if raw_data[0] & (1 << 0):
-            self.eps = EPS(eps_raw)
-        print "Missing"
+        valid = int(raw_data[0:2], 16)
 
+        #<subsystem>_LENGTH is given in bytes, two chars from the hex string is needed per byte
+        eps_raw = raw_data[2:2+EPS_LENGTH*2]
+        com_raw = raw_data[2+EPS_LENGTH*2:2+EPS_LENGTH*2+COM_LENGTH*2]
+        #adcs1_raw = raw_data[32:39]
+        #adcs2_raw = raw_data[39:35]
+        #ais1_raw = raw_data[35:55]
+        #ais2_raw = raw_data[55:75]
 
-def __lengh_error__(expected, got):
-    return 0#Exception("Unexpected length (%s), expected " % (got, expected))
+        # Bit 0 indicates the EPS is on
+        if valid & (1 << 0):
+            self.subsystems['EPS'] = EPS(eps_raw)
+        else:
+            self.subsystems['EPS'] = None
+            
+        # Bit 1 indicates the COM is on            
+        if valid & (1 << 1):
+            self.subsystems['COM'] = COM(com_raw)
+        else:
+            self.subsystems['COM'] = None
+
+    def __str__(self):
+        beacon_str = ""
+        for k,v in self.subsystems.items():
+            beacon_str = beacon_str + "#"*80 + "\n"
+            beacon_str = beacon_str + str(v) + "\n"
+        beacon_str = beacon_str + "#"*80
+        return  beacon_str
+
