@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import datetime
 
 BEACON_LENGTH = 84
 EPS_LENGTH = 20
@@ -19,10 +19,10 @@ class EPS(object):
         self.rt_clock = int(eps_data[12:20], 16) # uint32_t
         self.ping_status = int(eps_data[20:22], 16) # uint8_t (?)
         self.subsystem_selfstatus = int(eps_data[22:26], 16) # uint16_t
-        self.battery_voltage = int(eps_data[26:28], 16) # uint8_t
-        self.call_diff = int(eps_data[28:30], 16) # int8_t
-        self.battery_current = int(eps_data[30:32], 16) # int8_t
-        self.solar_power = int(eps_data[32:34], 16) # uint8_t
+        self.battery_voltage = int(eps_data[26:28], 16) * 40 # uint8_t - 40 magic number from MCC client
+        self.cell_diff = int(eps_data[28:30], 16) * 4 # int8_t
+        self.battery_current = int(eps_data[30:32], 16) * 10# int8_t
+        self.solar_power = int(eps_data[32:34], 16) * 20 # uint8_t
         self.temp = int(eps_data[34:36], 16) #int8_t
         self.pa_temp = int(eps_data[36:38], 16) #int8_t
         self.main_voltage = int(eps_data[38:40], 16) #int8_t
@@ -32,11 +32,15 @@ class EPS(object):
         Boot count:\t\t{0}
         Up time:\t\t{1} seconds
         Real time clock:\t{2}
-        Battery voltage:\t{3} V
-        Temperature:\t\t{4} C
-        PA temperature:\t\t{5} C""".format(
-            self.boot_count, self.uptime, self.rt_clock,
-            self.battery_voltage, self.temp, self.pa_temp))
+        Battery voltage:\t{3} mV
+        Cell difference:\t{4:.1f} mV
+        Battery current:\t{5} mA
+        Solar power:\t\t{6}
+        Temperature:\t\t{7} C
+        PA temperature:\t\t{8} C""".format(
+            self.boot_count, self.uptime, datetime.fromtimestamp(self.rt_clock),
+            self.battery_voltage, self.cell_diff, self.battery_current, self.solar_power,
+            self.temp, self.pa_temp))
 
         return eps_str
 
