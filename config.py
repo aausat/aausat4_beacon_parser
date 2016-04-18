@@ -59,7 +59,10 @@ class Config:
         except Exception as e:
             print("Error: {}".format(e))
         # Start update config timer
-        threading.Timer(60*Config.UPDATE_FREQUENCY_MINUTES, self.update_config, ()).start()
+        t = threading.Timer(60*Config.UPDATE_FREQUENCY_MINUTES, self.update_config, ())
+        t.daemon=True
+        t.start()
+
         
     def verify_config(self, config):
         valid = all(key in config for key in

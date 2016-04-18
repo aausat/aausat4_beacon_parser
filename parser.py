@@ -129,7 +129,9 @@ class Parser(threading.Thread):
             with self.bb_lock:
                 self.bluebox.set_frequency(self.center_freq + sat_info['doppler'])
 
-        threading.Timer(1, doppler_correction, ()).start()
+        t = threading.Timer(1, doppler_correction, ())
+        t.daemon=True
+        t.start()
             
 if __name__ == '__main__':
     qth = (55.6167, -12.6500, 5) # AAU
