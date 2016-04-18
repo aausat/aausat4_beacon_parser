@@ -1,5 +1,5 @@
 {
-    "version": 2,
+    "version": 3,
     "tle": [
         "AAUSAT4",
         "1 00001U 00001A   16113.99330000  .00000000  00000-0  00000-0 0  0012",
@@ -7,7 +7,7 @@
     ],
     "radio_settings": {
         "bitrate": 2400,
-        "power": 26,
+        "power": 27,
         "training": 200,
         "frequency": 437425000,
         "modindex": 1
