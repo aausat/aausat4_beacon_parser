@@ -11,7 +11,7 @@ class Config:
     DEFAULT_CONFIG_FILE = 'default_config.json'
     CONFIG_FILE = 'config.json'
     CONFIG_URL = 'https://raw.githubusercontent.com/aausat/aausat4_beacon_parser/master/default_config.json'
-    UPDATE_FREQUENCY_MINUTES = 1
+    UPDATE_FREQUENCY_MINUTES = 30
 
     def __init__(self):
         self.config_lock = threading.Lock()
