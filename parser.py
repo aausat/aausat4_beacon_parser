@@ -4,6 +4,7 @@ import binascii
 import time
 import struct
 import beacon
+import config
 
 class Parser(object):
 
@@ -13,20 +14,37 @@ class Parser(object):
     DEFAULT_POWER = 26
     DEFAULT_TRAINING = 200
     
-    def __init__(self):
+    def __init__(self, config):
+        self.config_version = -1
         self.bluebox = bluebox.Bluebox()
-        self.set_default_config()
+        self.set_config(config, True)
 
-    def set_default_config(self):
-        self.bluebox.set_frequency(Parser.DEFAULT_FREQUENCY)
-        time.sleep(0.01)
-        self.bluebox.set_modindex(Parser.DEFAULT_MODINDEX)
-        time.sleep(0.01)
-        self.bluebox.set_bitrate(Parser.DEFAULT_BITRATE)
-        time.sleep(0.01)
-        self.bluebox.set_power(Parser.DEFAULT_POWER)
-        time.sleep(0.01)
-        self.bluebox.set_training(Parser.DEFAULT_TRAINING)
+    def set_config(self, config, force_update=False):
+        if config:
+            if force_update or ('version' in config and config['version'] > self.config_version):
+                settings = config['radio_settings']
+                self.bluebox.set_frequency(settings['frequency']) if 'frequency' in settings else None
+                time.sleep(0.01)
+                self.bluebox.set_modindex(settings['modindex']) if 'modindex' in settings else None
+                time.sleep(0.01)
+                self.bluebox.set_bitrate(settings['bitrate']) if 'bitrate' in settings else None
+                time.sleep(0.01)
+                self.bluebox.set_power(settings['power']) if 'power' in settings else None
+                time.sleep(0.01)
+                self.bluebox.set_training(settings['training']) if 'training' in settings else None
+                self.config_version = config['version'] if 'version' in config else self.config_version
+        elif force_update:
+            # Set default config
+            self.bluebox.set_frequency(Parser.DEFAULT_FREQUENCY)
+            time.sleep(0.01)
+            self.bluebox.set_modindex(Parser.DEFAULT_MODINDEX)
+            time.sleep(0.01)
+            self.bluebox.set_bitrate(Parser.DEFAULT_BITRATE)
+            time.sleep(0.01)
+            self.bluebox.set_power(Parser.DEFAULT_POWER)
+            time.sleep(0.01)
+            self.bluebox.set_training(Parser.DEFAULT_TRAINING)
+            
 
     def parser_loop(self):
         while True:
@@ -38,6 +56,9 @@ class Parser(object):
                     # TODO: Report
             except Exception as e:
                 print e
+            # Update config if updated
+            config = self.config.get_config()
+            self.set_config(config)
         
     
     def parse_data(self, data):
@@ -68,5 +89,6 @@ class Parser(object):
         print b
         
 if __name__ == '__main__':
-    parser = Parser()
+    config = config.Config()
+    parser = Parser(config)
     parser.parser_loop()
