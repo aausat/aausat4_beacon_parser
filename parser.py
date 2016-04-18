@@ -5,8 +5,9 @@ import time
 import struct
 import beacon
 import config
+import threading
 
-class Parser(object):
+class Parser(threading.Thread):
 
     DEFAULT_FREQUENCY = 437425000
     DEFAULT_MODINDEX = 1
@@ -14,16 +15,24 @@ class Parser(object):
     DEFAULT_POWER = 26
     DEFAULT_TRAINING = 200
     
-    def __init__(self, config):
-        self.config_version = -1
-        self.bluebox = bluebox.Bluebox()
+    def __init__(self, qth, config, enable_doppler=True):
+        self.qth = qth
+        self.center_freq = Parser.DEFAULT_FREQUENCY
+        self.bb_lock = threading.Lock()
+        with self.bb_lock:
+            self.bluebox = bluebox.Bluebox()
+
+        self.config_version = -1            
         self.set_config(config, True)
 
     def set_config(self, config, force_update=False):
+        with self.bb_lock:
         if config:
             if force_update or ('version' in config and config['version'] > self.config_version):
                 settings = config['radio_settings']
-                self.bluebox.set_frequency(settings['frequency']) if 'frequency' in settings else None
+                self.center_freq = settings['frequency'] if 'frequency' in settings else DEFAULT_FREQUENCY
+
+                self.bluebox.set_frequency(self.center_freq)
                 time.sleep(0.01)
                 self.bluebox.set_modindex(settings['modindex']) if 'modindex' in settings else None
                 time.sleep(0.01)
@@ -33,23 +42,25 @@ class Parser(object):
                 time.sleep(0.01)
                 self.bluebox.set_training(settings['training']) if 'training' in settings else None
                 self.config_version = config['version'] if 'version' in config else self.config_version
-        elif force_update:
-            # Set default config
-            self.bluebox.set_frequency(Parser.DEFAULT_FREQUENCY)
-            time.sleep(0.01)
-            self.bluebox.set_modindex(Parser.DEFAULT_MODINDEX)
-            time.sleep(0.01)
-            self.bluebox.set_bitrate(Parser.DEFAULT_BITRATE)
-            time.sleep(0.01)
-            self.bluebox.set_power(Parser.DEFAULT_POWER)
-            time.sleep(0.01)
-            self.bluebox.set_training(Parser.DEFAULT_TRAINING)
+                
+            elif force_update:
+                # Set default config
+                self.bluebox.set_frequency(Parser.DEFAULT_FREQUENCY)
+                time.sleep(0.01)
+                self.bluebox.set_modindex(Parser.DEFAULT_MODINDEX)
+                time.sleep(0.01)
+                self.bluebox.set_bitrate(Parser.DEFAULT_BITRATE)
+                time.sleep(0.01)
+                self.bluebox.set_power(Parser.DEFAULT_POWER)
+                time.sleep(0.01)
+                self.bluebox.set_training(Parser.DEFAULT_TRAINING)
             
 
-    def parser_loop(self):
+    def run(self):
         while True:
             try:
-                data, rssi, freq = self.bluebox.receive(10000)
+                with self.bb_lock:
+                    data, rssi, freq = self.bluebox.receive(1000)
                 if data:
                     # Parse data
                     packet = self.parse_data(data)
@@ -57,8 +68,26 @@ class Parser(object):
             except Exception as e:
                 print e
             # Update config if updated
+            # An observer might be more useful
             config = self.config.get_config()
             self.set_config(config)
+
+
+    def __enable_doppler_correction__(self):
+        def doppler_correction(self):
+            # the predict library expects long (W)
+            # We expect long (E)
+            qth = self.qth
+            qth[1] = -qth[1]
+            
+            sat_info = predict.observe(tle, , time)
+
+            with self.bb_lock:
+                self.bluebox.set_frequency(self.center_freq + sat_info['doppler'])
+
+        threading.Timer(1, doppler_correction, ()).start()
+
+            
         
     
     def parse_data(self, data):

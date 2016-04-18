@@ -99,15 +99,11 @@ class Beacon(object):
         # Bit 0 indicates the EPS is on
         if valid & (1 << 0):
             self.subsystems['EPS'] = EPS(eps_raw)
-        else:
-            self.subsystems['EPS'] = None
             
         # Bit 1 indicates the COM is on            
         if valid & (1 << 1):
             self.subsystems['COM'] = COM(com_raw)
-        else:
-            self.subsystems['COM'] = None
-
+        
     def __str__(self):
         beacon_str = ""
         for k,v in self.subsystems.items():
