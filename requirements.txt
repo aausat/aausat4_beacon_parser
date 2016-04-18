@@ -1,6 +1,7 @@
 #-e git+https://github.com/satlab/bbctl.git@f52f382221fcca1bba50c3192c7e4aa38564ef2a#egg=bbctl
 -e git+https://github.com/aausat/bbctl.git#egg=bbctl
--e git+https://github.com/lbromo/pypredict.git#egg=predict
+-e git+https://github.com/nsat/pypredict.git#egg=pypredict
 pyusb==1.0.0b2
 wheel==0.24.0
 pytz==2016.3
+aenum==1.4.0

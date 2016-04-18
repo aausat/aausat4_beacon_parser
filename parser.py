@@ -1,15 +1,9 @@
-import bluebox
-import fec
-import binascii
-import time
-import struct
-import beacon
-import config
-import threading
-import enum
+import bluebox, fec
+import beacon, config
+import binascii, struct
+import time, aenum, threading
 
-
-class CSP_adress(enum.Enum):
+class CSP_adress(aenum.Enum):
     ESP   = 0
     FP    = 1
     LOG   = 1
@@ -43,21 +37,21 @@ class Parser(threading.Thread):
 
     def set_config(self, config, force_update=False):
         with self.bb_lock:
-        if config:
-            if force_update or ('version' in config and config['version'] > self.config_version):
-                settings = config['radio_settings']
-                self.center_freq = settings['frequency'] if 'frequency' in settings else DEFAULT_FREQUENCY
-
-                self.bluebox.set_frequency(self.center_freq)
-                time.sleep(0.01)
-                self.bluebox.set_modindex(settings['modindex']) if 'modindex' in settings else None
-                time.sleep(0.01)
-                self.bluebox.set_bitrate(settings['bitrate']) if 'bitrate' in settings else None
-                time.sleep(0.01)
-                self.bluebox.set_power(settings['power']) if 'power' in settings else None
-                time.sleep(0.01)
-                self.bluebox.set_training(settings['training']) if 'training' in settings else None
-                self.config_version = config['version'] if 'version' in config else self.config_version
+            if config:
+                if force_update or ('version' in config and config['version'] > self.config_version):
+                    settings = config['radio_settings']
+                    self.center_freq = settings['frequency'] if 'frequency' in settings else DEFAULT_FREQUENCY
+                    
+                    self.bluebox.set_frequency(self.center_freq)
+                    time.sleep(0.01)
+                    self.bluebox.set_modindex(settings['modindex']) if 'modindex' in settings else None
+                    time.sleep(0.01)
+                    self.bluebox.set_bitrate(settings['bitrate']) if 'bitrate' in settings else None
+                    time.sleep(0.01)
+                    self.bluebox.set_power(settings['power']) if 'power' in settings else None
+                    time.sleep(0.01)
+                    self.bluebox.set_training(settings['training']) if 'training' in settings else None
+                    self.config_version = config['version'] if 'version' in config else self.config_version
                 
             elif force_update:
                 # Set default config
@@ -74,8 +68,8 @@ class Parser(threading.Thread):
     def verify_pakcet(self, packet):
         pass
                 
-    def parse_data(self, bin_data):
-        if self.verify_packets:
+    def parse_data(self, bin_data, verify_packets):
+        if verify_packets:
             resp = verify_pakcet(bin_data)
             # print resp['status'] - something linke: payload data from ss to ss
             #                                       : failed verification 
@@ -98,7 +92,7 @@ class Parser(threading.Thread):
                 data = binascii.b2a_hex(data)
                 payload = data[8:-4]
             else:
-                print "Probably"
+                return
                 
         print beacon.Beacon(payload)
 
@@ -113,7 +107,7 @@ class Parser(threading.Thread):
                     data, rssi, freq = self.bluebox.receive(1000)
                 if data:
                     # Parse data
-                    packet = self.parse_data(data)
+                    packet = self.parse_data(data, self.verify_packets)
                     # TODO: Report
             except Exception as e:
                 print e
@@ -130,7 +124,7 @@ class Parser(threading.Thread):
             qth = self.qth
             qth[1] = -qth[1]
             
-            sat_info = predict.observe(tle, , time)
+            sat_info = predict.observe(tle, qth)
 
             with self.bb_lock:
                 self.bluebox.set_frequency(self.center_freq + sat_info['doppler'])
@@ -138,6 +132,7 @@ class Parser(threading.Thread):
         threading.Timer(1, doppler_correction, ()).start()
             
 if __name__ == '__main__':
+    qth = (55.6167, -12.6500, 5) # AAU
     config = config.Config()
-    parser = Parser(config)
+    parser = Parser(qth, config)
     parser.parser_loop()
