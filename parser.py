@@ -17,6 +17,7 @@ class Parser(threading.Thread):
     
     def __init__(self, qth, config, enable_doppler=True):
         self.qth = qth
+        self.enable_doppler = enable_doppler
         self.center_freq = Parser.DEFAULT_FREQUENCY
         self.bb_lock = threading.Lock()
         with self.bb_lock:
@@ -57,6 +58,9 @@ class Parser(threading.Thread):
             
 
     def run(self):
+        if self.enable_doppler:
+            __enable_doppler_correction__()
+
         while True:
             try:
                 with self.bb_lock:
@@ -86,9 +90,6 @@ class Parser(threading.Thread):
                 self.bluebox.set_frequency(self.center_freq + sat_info['doppler'])
 
         threading.Timer(1, doppler_correction, ()).start()
-
-            
-        
     
     def parse_data(self, data):
         # FEC
