@@ -6,6 +6,19 @@ import struct
 import beacon
 import config
 import threading
+import enum
+
+
+class CSP_adress(enum.Enum):
+    ESP   = 0
+    FP    = 1
+    LOG   = 1
+    SWISS = 1
+    AIS2  = 3
+    UHF   = 4
+    ADCS1 = 5
+    ADCS2 = 6
+    MCC   = 9
 
 class Parser(threading.Thread):
 
@@ -15,9 +28,11 @@ class Parser(threading.Thread):
     DEFAULT_POWER = 26
     DEFAULT_TRAINING = 200
     
-    def __init__(self, qth, config, enable_doppler=True):
+    def __init__(self, qth, config, enable_doppler=True, verify_packets=True):
         self.qth = qth
         self.enable_doppler = enable_doppler
+        self.verify_packets = verify_packets
+        
         self.center_freq = Parser.DEFAULT_FREQUENCY
         self.bb_lock = threading.Lock()
         with self.bb_lock:
@@ -55,7 +70,38 @@ class Parser(threading.Thread):
                 self.bluebox.set_power(Parser.DEFAULT_POWER)
                 time.sleep(0.01)
                 self.bluebox.set_training(Parser.DEFAULT_TRAINING)
-            
+
+    def verify_pakcet(self, packet):
+        pass
+                
+    def parse_data(self, bin_data):
+        if self.verify_packets:
+            resp = verify_pakcet(bin_data)
+            # print resp['status'] - something linke: payload data from ss to ss
+            #                                       : failed verification 
+            #                                       : beacon packet
+            # if beacon, extract payload
+
+        else:
+            # Parsing with verification
+            ec = fec.PacketHandler() # for Reed-Solomon codes
+            data, bit_corr, byte_corr = ec.deframe(bin_data)
+            # 
+            header = struct.unpack("<I", data[0:4])[0]
+            # Parse CSP header
+            src = ((header >> 25) & 0x1f)
+            dest = ((header >> 20) & 0x1f)
+            dest_port = ((header >> 14) & 0x3f)
+            src_port = ((header >> 8) & 0x3f)
+
+            if src == CSP_adress.UHF and dest == CSP_adress.MCC and dest_port == 42:
+                data = binascii.b2a_hex(data)
+                payload = data[8:-4]
+            else:
+                print "Probably"
+                
+        print beacon.Beacon(payload)
+
 
     def run(self):
         if self.enable_doppler:
@@ -90,34 +136,7 @@ class Parser(threading.Thread):
                 self.bluebox.set_frequency(self.center_freq + sat_info['doppler'])
 
         threading.Timer(1, doppler_correction, ()).start()
-    
-    def parse_data(self, data):
-        # FEC
-        ec = fec.PacketHandler()
-        data, bit_corr, byte_corr = ec.deframe(data)
-        # 
-        header = struct.unpack("<I", data[0:4])[0]
-
-        # Wrong idianess - check mcc server (csp_if_bb)
-        data = binascii.b2a_hex(data)
-        payload = data[8:-4]
-
-        # Parse CSP header
-        src = ((header >> 25) & 0x1f)
-        dest = ((header >> 20) & 0x1f)
-        dest_port = ((header >> 14) & 0x3f)
-        src_port = ((header >> 8) & 0x3f)
-
-        print(src)
-        print(dest)
-        print(dest_port)
-        print(src_port)
-        print(payload)
-
-        print(len(payload))
-        b = beacon.Beacon(payload)
-        print b
-        
+            
 if __name__ == '__main__':
     config = config.Config()
     parser = Parser(config)
