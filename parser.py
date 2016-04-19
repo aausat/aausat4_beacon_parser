@@ -1,4 +1,4 @@
-import bluebox, fec
+import bluebox, fec, predict
 import beacon, config
 import binascii, struct
 import time, aenum, threading
@@ -32,8 +32,9 @@ class Parser(threading.Thread):
         with self.bb_lock:
             self.bluebox = bluebox.Bluebox()
 
-        self.config_version = -1            
-        self.set_config(config, True)
+        self.config_version = -1
+        self.config = config
+        self.set_config(self.config.get_config(), True)
 
     def set_config(self, config, force_update=False):
         with self.bb_lock:
@@ -70,7 +71,7 @@ class Parser(threading.Thread):
                 
     def parse_data(self, bin_data, verify_packets):
         if verify_packets:
-            resp = verify_pakcet(bin_data)
+            resp = self.verify_pakcet(bin_data)
             # print resp['status'] - something linke: payload data from ss to ss
             #                                       : failed verification 
             #                                       : beacon packet
@@ -87,11 +88,13 @@ class Parser(threading.Thread):
             dest = ((header >> 20) & 0x1f)
             dest_port = ((header >> 14) & 0x3f)
             src_port = ((header >> 8) & 0x3f)
-
-            if src == CSP_adress.UHF and dest == CSP_adress.MCC and dest_port == 42:
+            if CSP_adress(src) == CSP_adress.UHF and CSP_adress(dest) == CSP_adress.MCC and dest_port == 10:
+                print "Could be beacon -- trying to parse"
                 data = binascii.b2a_hex(data)
+                print data
                 payload = data[8:-4]
             else:
+                print "Could be payload data from {0} to {1}. Will not attempt to parse data".format(CSP_adress(src), CSP_adress(dest))
                 return
                 
         print beacon.Beacon(payload)
@@ -117,23 +120,25 @@ class Parser(threading.Thread):
             self.set_config(config)        
 
     def __enable_doppler_correction__(self):
-        def doppler_correction(self):
-            # the predict library expects long (W)
-            # We expect long (E)
-            qth = self.qth
-            qth[1] = -qth[1]
+        qth = (self.qth[0], -self.qth[1], self.qth[2])
+        tle = self.config.get_config()['tle']
+        self.__doppler_correction__(qth, tle)
+        
+    def __doppler_correction__(self, qth, tle):
+        # the predict library expects long (W)
+        # We expect long (E)        
+        sat_info = predict.observe(tle, qth)
+        freq =  self.center_freq + sat_info['doppler']
+        print "Doppler:", freq
+        with self.bb_lock:
+            self.bluebox.set_frequency(freq)
             
-            sat_info = predict.observe(tle, qth)
-
-            with self.bb_lock:
-                self.bluebox.set_frequency(self.center_freq + sat_info['doppler'])
-
-        t = threading.Timer(1, doppler_correction, ())
+        t = threading.Timer(10, self.__doppler_correction__, [qth, tle])
         t.daemon=True
         t.start()
-            
+
 if __name__ == '__main__':
     qth = (55.6167, -12.6500, 5) # AAU
     config = config.Config()
-    parser = Parser(qth, config)
+    parser = Parser(qth, config, enable_doppler=False, verify_packets=False)
     parser.run()
