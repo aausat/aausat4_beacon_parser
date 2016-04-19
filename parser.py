@@ -17,7 +17,7 @@ class Parser(object):
     def __init__(self, config):
         self.config_version = -1
         self.bluebox = bluebox.Bluebox()
-        self.set_config(config, True)
+        self.set_config(config.get_config(), True)
 
     def set_config(self, config, force_update=False):
         if config:
