@@ -11,7 +11,7 @@ class Config:
     DEFAULT_CONFIG_FILE = 'default_config.json'
     CONFIG_FILE = 'config.json'
     CONFIG_URL = 'https://raw.githubusercontent.com/aausat/aausat4_beacon_parser/master/default_config.json'
-    UPDATE_FREQUENCY_MINUTES = 1
+    UPDATE_FREQUENCY_MINUTES = 30
 
     def __init__(self):
         self.config_lock = threading.Lock()
@@ -62,7 +62,6 @@ class Config:
         t = threading.Timer(60*Config.UPDATE_FREQUENCY_MINUTES, self.update_config, ())
         t.daemon=True
         t.start()
-
         
     def verify_config(self, config):
         valid = all(key in config for key in

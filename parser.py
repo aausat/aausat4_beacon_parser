@@ -99,7 +99,7 @@ class Parser(threading.Thread):
 
     def run(self):
         if self.enable_doppler:
-            __enable_doppler_correction__()
+            self.__enable_doppler_correction__()
 
         while True:
             try:
@@ -114,8 +114,7 @@ class Parser(threading.Thread):
             # Update config if updated
             # An observer might be more useful
             config = self.config.get_config()
-            self.set_config(config)
-
+            self.set_config(config)        
 
     def __enable_doppler_correction__(self):
         def doppler_correction(self):
@@ -137,4 +136,4 @@ if __name__ == '__main__':
     qth = (55.6167, -12.6500, 5) # AAU
     config = config.Config()
     parser = Parser(qth, config)
-    parser.parser_loop()
+    parser.run()
