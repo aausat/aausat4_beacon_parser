@@ -21,7 +21,7 @@ class Parser(threading.Thread):
     DEFAULT_BITRATE = 2400
     DEFAULT_POWER = 26
     DEFAULT_TRAINING = 200
-    DEFAUL_SYNCWORD = "4f5a34435542" # OZ4CUB
+    DEFAUL_SYNCWORD = "4f5a34" # OZ4
     
     def __init__(self, qth, config, enable_doppler=True, verify_packets=True):
         self.qth = qth
