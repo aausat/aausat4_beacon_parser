@@ -21,6 +21,8 @@ class Parser(threading.Thread):
     DEFAULT_BITRATE = 2400
     DEFAULT_POWER = 26
     DEFAULT_TRAINING = 200
+
+    LOGFILE = "log.txt"
     
     def __init__(self, qth, config, enable_doppler=True, verify_packets=True):
         self.qth = qth
@@ -70,6 +72,9 @@ class Parser(threading.Thread):
         pass
                 
     def parse_data(self, bin_data, verify_packets):
+        logmsg = "=================\n"
+        logmsg += "{}\n".format(bin_data)
+        payload = None
         if verify_packets:
             resp = self.verify_pakcet(bin_data)
             # print resp['status'] - something linke: payload data from ss to ss
@@ -81,6 +86,7 @@ class Parser(threading.Thread):
             # Parsing with verification
             ec = fec.PacketHandler() # for Reed-Solomon codes
             data, bit_corr, byte_corr = ec.deframe(bin_data)
+            logmsg += "{}\n{}, {}\n".format(data, bit_corr, byte_corr)
             # 
             header = struct.unpack("<I", data[0:4])[0]
             # Parse CSP header
@@ -93,11 +99,18 @@ class Parser(threading.Thread):
                 data = binascii.b2a_hex(data)
                 print data
                 payload = data[8:-4]
+                logmsg += "{}\n".format(data)
             else:
                 print "Could be payload data from {0} to {1}. Will not attempt to parse data".format(CSP_adress(src), CSP_adress(dest))
                 return
-                
-        print beacon.Beacon(payload)
+        
+        if payload:
+            beacon_pretty = beacon.Beacon(payload)
+            logmsg += "{}\n".format(beacon_pretty)
+            print beacon_pretty
+        
+        with open(Parser.LOGFILE, "a") as logfile:
+            logfile.write(logmsg)
 
 
     def run(self):
