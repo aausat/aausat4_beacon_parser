@@ -10,6 +10,7 @@
         "power": 26,
         "training": 200,
         "frequency": 437425000,
-        "modindex": 1
+        "modindex": 1,
+        "syncword": "4f5a34435542"
     }
 }

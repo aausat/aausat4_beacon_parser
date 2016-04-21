@@ -21,6 +21,7 @@ class Parser(threading.Thread):
     DEFAULT_BITRATE = 2400
     DEFAULT_POWER = 26
     DEFAULT_TRAINING = 200
+    DEFAUL_SYNCWORD = "4f5a34435542" # OZ4CUB
     
     def __init__(self, qth, config, enable_doppler=True, verify_packets=True):
         self.qth = qth
@@ -52,6 +53,10 @@ class Parser(threading.Thread):
                     self.bluebox.set_power(settings['power']) if 'power' in settings else None
                     time.sleep(0.01)
                     self.bluebox.set_training(settings['training']) if 'training' in settings else None
+                    time.sleep(0.01)
+                    self.bluebox.set_training(settings['syncword']) if 'syncword' in settings else None
+                    time.sleep(0.01)
+                    
                     self.config_version = config['version'] if 'version' in config else self.config_version
                 
             elif force_update:
@@ -65,6 +70,10 @@ class Parser(threading.Thread):
                 self.bluebox.set_power(Parser.DEFAULT_POWER)
                 time.sleep(0.01)
                 self.bluebox.set_training(Parser.DEFAULT_TRAINING)
+                time.sleep(0.01)
+                self.bluebox.set_syncword(Parser.DEFAULT_SYNCWORD)
+                
+                self.config_version = -1
 
     def verify_pakcet(self, packet):
         pass
