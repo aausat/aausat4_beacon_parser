@@ -87,6 +87,7 @@ class Parser(threading.Thread):
             ec = fec.PacketHandler() # for Reed-Solomon codes
             data, bit_corr, byte_corr = ec.deframe(bin_data)
             logmsg += "{}\n{}, {}\n".format(data, bit_corr, byte_corr)
+            print "####", bit_corr, byte_corr
             # 
             header = struct.unpack("<I", data[0:4])[0]
             # Parse CSP header
@@ -114,6 +115,7 @@ class Parser(threading.Thread):
 
 
     def run(self):
+        self.bluebox.set_frequency(437028000)
         if self.enable_doppler:
             self.__enable_doppler_correction__()
 
@@ -123,6 +125,8 @@ class Parser(threading.Thread):
                     data, rssi, freq = self.bluebox.receive(1000)
                 if data:
                     # Parse data
+                    print "Packet detected. RSSI: %s" % rssi
+                    print binascii.b2a_hex(data)
                     packet = self.parse_data(data, self.verify_packets)
                     # TODO: Report
             except Exception as e:
