@@ -55,7 +55,7 @@ class Parser(threading.Thread):
                     time.sleep(0.01)
                     self.bluebox.set_training(settings['training']) if 'training' in settings else None
                     time.sleep(0.01)
-                    self.bluebox.set_syncword(settings['syncword']) if 'syncword' in settings else None
+                    self.bluebox.set_syncword(int(settings['syncword'], 16)) if 'syncword' in settings else None
                     time.sleep(0.01)
                     
                     self.config_version = config['version'] if 'version' in config else self.config_version
@@ -72,7 +72,7 @@ class Parser(threading.Thread):
                 time.sleep(0.01)
                 self.bluebox.set_training(Parser.DEFAULT_TRAINING)
                 time.sleep(0.01)
-                self.bluebox.set_syncword(Parser.DEFAULT_SYNCWORD)
+                self.bluebox.set_syncword(int(Parser.DEFAULT_SYNCWORD, 16))
                 
                 self.config_version = -1
 
