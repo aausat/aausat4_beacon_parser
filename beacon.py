@@ -47,7 +47,7 @@ class EPS(object):
 
 class COM(object):
     def __init__(self, com_data):
-        self.boot_count = int(com_data[0:4], 16) # uint16_t
+        self.boot_count = int(com_data[0:4], 16) & 0x1FFF # uint16_t
         self.packets_received = int(com_data[4:8], 16) # uint16_t
         self.packets_send = int(com_data[8:12], 16) # uint16_t
         self.latest_rssi = int(com_data[12:16], 16) # uint16_t
