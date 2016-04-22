@@ -152,7 +152,7 @@ class Parser(threading.Thread):
                 if data:
                     # Parse data
                     packet = Parser.parse_data(data, self.verify_packets,
-                                               logfile=Parser.LOGFILE, self.irc)
+                                               logfile=Parser.LOGFILE, irc=self.irc)
                     # TODO: Report
             except Exception as e:
                 print e
