@@ -51,8 +51,8 @@ class Config:
             
 
     def update_config(self):
+        print("Updating config...")
         try:
-            print("Updating config...")
             f = urllib2.urlopen(Config.CONFIG_URL)
             content = f.read()
             with open(Config.CONFIG_FILE, 'w') as f:
