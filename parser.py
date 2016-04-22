@@ -205,9 +205,11 @@ if __name__ == '__main__':
         bin_data = binascii.unhexlify(args.hexstr)
         Parser.parse_data(bin_data, False, False)
         
-    elif args.lat and args.lon and args.alt:
+    elif (not args.enable_doppler) or (args.lat and args.lon and args.alt):
         # Start parser
-        qth = (args.lat, args.lon, args.alt)
+        qth = None
+        if args.enable_doppler:
+            qth = (args.lat, args.lon, args.alt)
         config = config.Config()
         parser = Parser(qth, config, enable_doppler=args.enable_doppler,
                         verify_packets=False, enable_reporting=args.enable_reporting)
