@@ -79,9 +79,11 @@ class Parser(threading.Thread):
                 
                 self.config_version = -1
 
+    @classmethod
     def verify_packet(packet):
         pass
-                
+
+    @classmethod
     def parse_data(bin_data, verify_packets, logfile=None):
         logmsg = "=================\n"
         logmsg = "{}\n".format(datetime.now().isoformat(' '))
