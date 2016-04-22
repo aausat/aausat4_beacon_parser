@@ -80,17 +80,17 @@ class Parser(threading.Thread):
                 self.config_version = -1
 
     @classmethod
-    def verify_packet(packet):
+    def verify_packet(cls, packet):
         pass
 
     @classmethod
-    def parse_data(bin_data, verify_packets, logfile=None):
+    def parse_data(cls, bin_data, verify_packets, logfile=None):
         logmsg = "=================\n"
         logmsg = "{}\n".format(datetime.now().isoformat(' '))
         logmsg += "{}\n".format(binascii.b2a_hex(bin_data))
         payload = None
         if verify_packets:
-            resp = Parser.verify_packet(bin_data)
+            resp = cls.verify_packet(bin_data)
             # print resp['status'] - something linke: payload data from ss to ss
             #                                       : failed verification 
             #                                       : beacon packet
