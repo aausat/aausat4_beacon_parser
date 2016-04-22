@@ -83,7 +83,8 @@ class Parser(threading.Thread):
                 
     def parse_data(self, bin_data, verify_packets):
         logmsg = "=================\n"
-        logmsg += "{}\n".format(bin_data)
+        logmsg = "{}\n".format(datetime.now().isoformat(' '))
+        logmsg += "{}\n".format(binascii.b2a_hex(bin_data))
         payload = None
         if verify_packets:
             resp = self.verify_pakcet(bin_data)
@@ -96,13 +97,15 @@ class Parser(threading.Thread):
             # Parsing with verification
             ec = fec.PacketHandler() # for Reed-Solomon codes
             data, bit_corr, byte_corr = ec.deframe(bin_data)
-
-            logmsg += "{}\n{}, {}\n".format(data, bit_corr, byte_corr)
+            hexdata = binascii.b2a_hex(data)
+            
+            logmsg += "{}\n{}, {}\n".format(hexdata, bit_corr, byte_corr)
             # 
             print("\n" + "#="*40 + "#\n")
-            print("Received packet")
+            print("Received packet {}".format(datetime.now().isoformat(' ')))
             print("Bit corr: {}".format(bit_corr))
             print("Byte corr: {}".format(byte_corr))
+            print("{}\n".format(hexdata))
             
             header = struct.unpack("<I", data[0:4])[0]
             # Parse CSP header
@@ -110,8 +113,6 @@ class Parser(threading.Thread):
             dest = ((header >> 20) & 0x1f)
             dest_port = ((header >> 14) & 0x3f)
             src_port = ((header >> 8) & 0x3f)
-            hexdata = binascii.b2a_hex(data)
-            print("{}\n".format(hexdata))
             if CSP_adress(src) == CSP_adress.UHF and CSP_adress(dest) == CSP_adress.MCC and dest_port == 10:
                 payload = hexdata[8:-4]
             else:
