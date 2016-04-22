@@ -3,6 +3,7 @@ import beacon, config
 import binascii, struct
 import time, aenum, threading
 import argparse
+from datetime import datetime
 
 class CSP_adress(aenum.Enum):
     ESP   = 0
