@@ -177,8 +177,10 @@ if __name__ == '__main__':
                             help='Longitude of ground station (W), e.g. -12.6500')
     args_parser.add_argument('--alt', dest='alt', required=False, type=float, default=None,
                             help='Altitude of ground station (meters), e.g. 10')
-    args_parser.add_argument('--disable-doppler', dest='disable_doppler', type=bool, required=False, default=False,
-                            help='Disables doppler tracking.')
+    args_parser.add_argument('--disable-doppler', dest='enable_doppler',
+                             action='store_false',
+                             required=False,
+                             help='Disables doppler tracking.')
     args_parser.add_argument('--hexstr', dest='hexstr', required=False, default=None,
                             help='Decodes the hex string and exits.')
 
@@ -190,10 +192,9 @@ if __name__ == '__main__':
         
     elif args.lat and args.lon and args.alt:
         # Start parser
-        doppler = (not args.disable_doppler)
         qth = (args.lat, args.lon, args.alt)
         config = config.Config()
-        parser = Parser(qth, config, enable_doppler=doppler, verify_packets=False)
+        parser = Parser(qth, config, enable_doppler=args.enable_doppler, verify_packets=False)
         parser.run()
     else:
         args_parser.print_help()
