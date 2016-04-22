@@ -4,6 +4,7 @@ import binascii, struct
 import time, aenum, threading
 import argparse
 from datetime import datetime
+import ircreporter
 
 class CSP_adress(aenum.Enum):
     ESP   = 0
@@ -27,7 +28,8 @@ class Parser(threading.Thread):
 
     LOGFILE = "log.txt"
     
-    def __init__(self, qth, config, enable_doppler=True, verify_packets=True):
+    def __init__(self, qth, config, enable_doppler=True, verify_packets=True,
+                 enable_reporting=False):
         self.qth = qth
         self.enable_doppler = enable_doppler
         self.verify_packets = verify_packets
@@ -36,6 +38,10 @@ class Parser(threading.Thread):
         self.bb_lock = threading.Lock()
         with self.bb_lock:
             self.bluebox = bluebox.Bluebox()
+
+        self.irc = None
+        if enable_reporting:
+            self.irc = ircreporter.IRCReporter()
 
         self.config_version = -1
         self.config = config
@@ -120,7 +126,6 @@ class Parser(threading.Thread):
                 payload = hexdata[8:-4]
             else:
                 print "Possibly payload data from {0} to {1}. Will not attempt to parse".format(CSP_adress(src), CSP_adress(dest))
-                return
         
         if payload:
             beacon_decode = beacon.Beacon(payload)
@@ -130,6 +135,8 @@ class Parser(threading.Thread):
         if logfile:
             with open(logfile, "a") as f:
                 f.write(logmsg)
+        if self.irc:
+            self.irc.send(logmsg)
 
 
     def run(self):
@@ -181,6 +188,10 @@ if __name__ == '__main__':
                              action='store_false',
                              required=False,
                              help='Disables doppler tracking.')
+    args_parser.add_argument('--enable-reporting', dest='enable_reporting',
+                             action='store_true',
+                             required=False,
+                             help='Enables automatic reporting of received packets.')
     args_parser.add_argument('--hexstr', dest='hexstr', required=False, default=None,
                             help='Decodes the hex string and exits.')
 
@@ -194,7 +205,8 @@ if __name__ == '__main__':
         # Start parser
         qth = (args.lat, args.lon, args.alt)
         config = config.Config()
-        parser = Parser(qth, config, enable_doppler=args.enable_doppler, verify_packets=False)
+        parser = Parser(qth, config, enable_doppler=args.enable_doppler,
+                        verify_packets=False, enable_reporting=args.enable_reporting)
         parser.run()
     else:
         args_parser.print_help()
