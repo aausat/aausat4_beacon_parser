@@ -82,20 +82,23 @@ class Parser(threading.Thread):
             # Parsing with verification
             ec = fec.PacketHandler() # for Reed-Solomon codes
             data, bit_corr, byte_corr = ec.deframe(bin_data)
-            # 
+            print("\n" + "#="*40 + "#\n")
+            print("Received packet")
+            print("Bit corr: {}".format(bit_corr))
+            print("Byte corr: {}".format(byte_corr))
+            
             header = struct.unpack("<I", data[0:4])[0]
             # Parse CSP header
             src = ((header >> 25) & 0x1f)
             dest = ((header >> 20) & 0x1f)
             dest_port = ((header >> 14) & 0x3f)
             src_port = ((header >> 8) & 0x3f)
+            hexdata = binascii.b2a_hex(data)
+            print("{}\n".format(hexdata))
             if CSP_adress(src) == CSP_adress.UHF and CSP_adress(dest) == CSP_adress.MCC and dest_port == 10:
-                print "Could be beacon -- trying to parse"
-                data = binascii.b2a_hex(data)
-                print data
-                payload = data[8:-4]
+                payload = hexdata[8:-4]
             else:
-                print "Could be payload data from {0} to {1}. Will not attempt to parse data".format(CSP_adress(src), CSP_adress(dest))
+                print "Possibly payload data from {0} to {1}. Will not attempt to parse".format(CSP_adress(src), CSP_adress(dest))
                 return
                 
         print beacon.Beacon(payload)

@@ -107,8 +107,6 @@ class Beacon(object):
     def __str__(self):
         beacon_str = ""
         for k,v in self.subsystems.items():
-            beacon_str = beacon_str + "#"*80 + "\n"
-            beacon_str = beacon_str + str(v) + "\n"
-        beacon_str = beacon_str + "#"*80
+            beacon_str += str(v) + "\n"
         return  beacon_str
 
