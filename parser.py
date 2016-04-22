@@ -119,9 +119,9 @@ class Parser(threading.Thread):
                 return
         
         if payload:
-            beacon = beacon.Beacon(payload)
-            logmsg += "{}\n".format(beacon)
-            print beacon
+            beacon_decode = beacon.Beacon(payload)
+            logmsg += "{}\n".format(beacon_decode)
+            print beacon_decode
         
         with open(Parser.LOGFILE, "a") as logfile:
             logfile.write(logmsg)
