@@ -2,6 +2,7 @@ import bluebox, fec, predict
 import beacon, config
 import binascii, struct
 import time, aenum, threading
+import argparse
 
 class CSP_adress(aenum.Enum):
     ESP   = 0
@@ -138,7 +139,17 @@ class Parser(threading.Thread):
         t.start()
 
 if __name__ == '__main__':
-    qth = (55.6167, -12.6500, 5) # AAU
+    parser = argparse.ArgumentParser(description='AAUSAT4 Beacon Parser')
+    parser.add_argument('--lat', dest='lat', required=True, type=float,
+                            help='Latitude of ground station (N), e.g. 55.6167')
+    parser.add_argument('--lon', dest='lon', required=True, type=float,
+                            help='Longitude of ground station (W), e.g. -12.6500')
+    parser.add_argument('--alt', dest='alt', required=True, type=float,
+                            help='Altitude of ground station (meters), e.g. 10')
+
+    args = parser.parse_args()
+
+    qth = (args.lat, args.lon, args.alt)
     config = config.Config()
     parser = Parser(qth, config, enable_doppler=False, verify_packets=False)
     parser.run()
