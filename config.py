@@ -45,6 +45,9 @@ class Config:
                     update = False
             if update:
                 self.config = config_dict
+                print("Config updated (version {}).".format(config_dict['version']))
+            else:
+                print("No need to update.")
             
 
     def update_config(self):
