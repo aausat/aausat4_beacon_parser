@@ -42,7 +42,9 @@ class Parser(threading.Thread):
         self.irc = None
         if enable_reporting:
             self.irc = ircreporter.IRCReporter()
-
+            if self.qth:
+                # Report location of bluebox
+                self.irc.send("Location: {}".format(self.qth))
         self.config_version = -1
         self.config = config
         self.set_config(self.config.get_config(), True)
@@ -90,7 +92,7 @@ class Parser(threading.Thread):
         pass
 
     @classmethod
-    def parse_data(cls, bin_data, verify_packets, logfile=None):
+    def parse_data(cls, bin_data, verify_packets, logfile=None, irc=None):
         logmsg = "=================\n"
         logmsg = "{}\n".format(datetime.now().isoformat(' '))
         logmsg += "{}\n".format(binascii.b2a_hex(bin_data))
@@ -135,8 +137,8 @@ class Parser(threading.Thread):
         if logfile:
             with open(logfile, "a") as f:
                 f.write(logmsg)
-        if self.irc:
-            self.irc.send(logmsg)
+        if irc:
+            irc.send(logmsg)
 
 
     def run(self):
@@ -149,7 +151,8 @@ class Parser(threading.Thread):
                     data, rssi, freq = self.bluebox.receive(1000)
                 if data:
                     # Parse data
-                    packet = Parser.parse_data(data, self.verify_packets, logfile=Parser.LOGFILE)
+                    packet = Parser.parse_data(data, self.verify_packets,
+                                               logfile=Parser.LOGFILE, self.irc)
                     # TODO: Report
             except Exception as e:
                 print e
