@@ -16,6 +16,7 @@ class Config:
     def __init__(self):
         self.config_lock = threading.Lock()
         self.config = None
+        self.load_config()
         self.update_config()
 
     def get_config(self):
@@ -43,9 +44,10 @@ class Config:
             if only_if_new and self.config != None:
                 if self.config['version'] >= config_dict['version']:
                     update = False
+                else:
+                    print("Config updated (version {}).".format(config_dict['version']))
             if update:
                 self.config = config_dict
-                print("Config updated (version {}).".format(config_dict['version']))
             else:
                 print("No need to update.")
             
