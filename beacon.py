@@ -1,8 +1,9 @@
 from datetime import datetime
+import struct
 
 BEACON_LENGTH = 84
 EPS_LENGTH = 20
-COM_LENGTH = 12
+COM_LENGTH = 10
 
 class InputException(Exception):
     def __init__(self, got, expected):
@@ -50,9 +51,9 @@ class COM(object):
         self.boot_count = int(com_data[0:4], 16) & 0x1FFF # uint16_t
         self.packets_received = int(com_data[4:8], 16) # uint16_t
         self.packets_send = int(com_data[8:12], 16) # uint16_t
-        self.latest_rssi = int(com_data[12:16], 16) # uint16_t
-        self.latest_bit_correction = int(com_data[16:20], 16) # uint16_t
-        self.latest_byte_correction = int(com_data[20:24], 16) # uint16_t
+        self.latest_rssi = struct.unpack('>h', com_data[12:16].decode('hex'))[0] # int16_t
+        self.latest_bit_correction = int(com_data[16:18], 16) # uint8_t
+        self.latest_byte_correction = int(com_data[18:20], 16) # uint8_t
         
     def __str__(self):
         com_str = ("""COM:
