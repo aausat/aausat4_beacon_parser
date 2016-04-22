@@ -2,6 +2,7 @@ import bluebox, fec, predict
 import beacon, config
 import binascii, struct
 import time, aenum, threading
+import argparse
 
 class CSP_adress(aenum.Enum):
     ESP   = 0
@@ -21,6 +22,7 @@ class Parser(threading.Thread):
     DEFAULT_BITRATE = 2400
     DEFAULT_POWER = 26
     DEFAULT_TRAINING = 200
+    DEFAUL_SYNCWORD = "4f5a34" # OZ4
 
     LOGFILE = "log.txt"
     
@@ -54,6 +56,10 @@ class Parser(threading.Thread):
                     self.bluebox.set_power(settings['power']) if 'power' in settings else None
                     time.sleep(0.01)
                     self.bluebox.set_training(settings['training']) if 'training' in settings else None
+                    time.sleep(0.01)
+                    self.bluebox.set_syncword(int(settings['syncword'], 16)) if 'syncword' in settings else None
+                    time.sleep(0.01)
+                    
                     self.config_version = config['version'] if 'version' in config else self.config_version
                 
             elif force_update:
@@ -67,6 +73,10 @@ class Parser(threading.Thread):
                 self.bluebox.set_power(Parser.DEFAULT_POWER)
                 time.sleep(0.01)
                 self.bluebox.set_training(Parser.DEFAULT_TRAINING)
+                time.sleep(0.01)
+                self.bluebox.set_syncword(int(Parser.DEFAULT_SYNCWORD, 16))
+                
+                self.config_version = -1
 
     def verify_pakcet(self, packet):
         pass
@@ -86,28 +96,32 @@ class Parser(threading.Thread):
             # Parsing with verification
             ec = fec.PacketHandler() # for Reed-Solomon codes
             data, bit_corr, byte_corr = ec.deframe(bin_data)
+
             logmsg += "{}\n{}, {}\n".format(data, bit_corr, byte_corr)
             # 
+            print("\n" + "#="*40 + "#\n")
+            print("Received packet")
+            print("Bit corr: {}".format(bit_corr))
+            print("Byte corr: {}".format(byte_corr))
+            
             header = struct.unpack("<I", data[0:4])[0]
             # Parse CSP header
             src = ((header >> 25) & 0x1f)
             dest = ((header >> 20) & 0x1f)
             dest_port = ((header >> 14) & 0x3f)
             src_port = ((header >> 8) & 0x3f)
+            hexdata = binascii.b2a_hex(data)
+            print("{}\n".format(hexdata))
             if CSP_adress(src) == CSP_adress.UHF and CSP_adress(dest) == CSP_adress.MCC and dest_port == 10:
-                print "Could be beacon -- trying to parse"
-                data = binascii.b2a_hex(data)
-                print data
-                payload = data[8:-4]
-                logmsg += "{}\n".format(data)
+                payload = hexdata[8:-4]
             else:
-                print "Could be payload data from {0} to {1}. Will not attempt to parse data".format(CSP_adress(src), CSP_adress(dest))
+                print "Possibly payload data from {0} to {1}. Will not attempt to parse".format(CSP_adress(src), CSP_adress(dest))
                 return
         
         if payload:
-            beacon_pretty = beacon.Beacon(payload)
-            logmsg += "{}\n".format(beacon_pretty)
-            print beacon_pretty
+            beacon = beacon.Beacon(payload)
+            logmsg += "{}\n".format(beacon)
+            print beacon
         
         with open(Parser.LOGFILE, "a") as logfile:
             logfile.write(logmsg)
@@ -151,7 +165,17 @@ class Parser(threading.Thread):
         t.start()
 
 if __name__ == '__main__':
-    qth = (55.6167, -12.6500, 5) # AAU
+    parser = argparse.ArgumentParser(description='AAUSAT4 Beacon Parser')
+    parser.add_argument('--lat', dest='lat', required=True, type=float,
+                            help='Latitude of ground station (N), e.g. 55.6167')
+    parser.add_argument('--lon', dest='lon', required=True, type=float,
+                            help='Longitude of ground station (W), e.g. -12.6500')
+    parser.add_argument('--alt', dest='alt', required=True, type=float,
+                            help='Altitude of ground station (meters), e.g. 10')
+
+    args = parser.parse_args()
+
+    qth = (args.lat, args.lon, args.alt)
     config = config.Config()
     parser = Parser(qth, config, enable_doppler=False, verify_packets=False)
     parser.run()
