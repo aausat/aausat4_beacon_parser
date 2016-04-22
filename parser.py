@@ -183,7 +183,8 @@ if __name__ == '__main__':
     args = args_parser.parse_args()
 
     if args.hexstr:
-        Parser.parse_data(args.hexstr, False, False)
+        bin_data = binascii.unhexlify(args.hexstr)
+        Parser.parse_data(bin_data, False, False)
         
     elif args.lat and args.lon and args.alt:
         # Start parser
