@@ -79,16 +79,16 @@ class Parser(threading.Thread):
                 
                 self.config_version = -1
 
-    def verify_pakcet(self, packet):
+    def verify_packet(packet):
         pass
                 
-    def parse_data(self, bin_data, verify_packets):
+    def parse_data(bin_data, verify_packets, logfile=None):
         logmsg = "=================\n"
         logmsg = "{}\n".format(datetime.now().isoformat(' '))
         logmsg += "{}\n".format(binascii.b2a_hex(bin_data))
         payload = None
         if verify_packets:
-            resp = self.verify_pakcet(bin_data)
+            resp = Parser.verify_packet(bin_data)
             # print resp['status'] - something linke: payload data from ss to ss
             #                                       : failed verification 
             #                                       : beacon packet
@@ -124,9 +124,10 @@ class Parser(threading.Thread):
             beacon_decode = beacon.Beacon(payload)
             logmsg += "{}\n".format(beacon_decode)
             print beacon_decode
-        
-        with open(Parser.LOGFILE, "a") as logfile:
-            logfile.write(logmsg)
+
+        if logfile:
+            with open(logfile, "a") as f:
+                f.write(logmsg)
 
 
     def run(self):
@@ -139,7 +140,7 @@ class Parser(threading.Thread):
                     data, rssi, freq = self.bluebox.receive(1000)
                 if data:
                     # Parse data
-                    packet = self.parse_data(data, self.verify_packets)
+                    packet = Parser.parse_data(data, self.verify_packets, logfile=Parser.LOGFILE)
                     # TODO: Report
             except Exception as e:
                 print e
@@ -167,17 +168,27 @@ class Parser(threading.Thread):
         t.start()
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='AAUSAT4 Beacon Parser')
-    parser.add_argument('--lat', dest='lat', required=True, type=float,
+    args_parser = argparse.ArgumentParser(description='AAUSAT4 Beacon Parser')
+    args_parser.add_argument('--lat', dest='lat', required=False, type=float, default=None,
                             help='Latitude of ground station (N), e.g. 55.6167')
-    parser.add_argument('--lon', dest='lon', required=True, type=float,
+    args_parser.add_argument('--lon', dest='lon', required=False, type=float, default=None,
                             help='Longitude of ground station (W), e.g. -12.6500')
-    parser.add_argument('--alt', dest='alt', required=True, type=float,
+    args_parser.add_argument('--alt', dest='alt', required=False, type=float, default=None,
                             help='Altitude of ground station (meters), e.g. 10')
+    args_parser.add_argument('--hexstr', dest='hexstr', required=False, default=None,
+                            help='Decodes the hex string and exits.')
 
-    args = parser.parse_args()
+    args = args_parser.parse_args()
 
-    qth = (args.lat, args.lon, args.alt)
-    config = config.Config()
-    parser = Parser(qth, config, enable_doppler=False, verify_packets=False)
-    parser.run()
+    if args.hexstr:
+        Parser.parse_data(args.hexstr, False, False)
+        
+    elif args.lat and args.lon and args.alt:
+        # Start parser
+        qth = (args.lat, args.lon, args.alt)
+        config = config.Config()
+        parser = Parser(qth, config, enable_doppler=False, verify_packets=False)
+        parser.run()
+    else:
+        args_parser.print_help()
+        exit(1)
