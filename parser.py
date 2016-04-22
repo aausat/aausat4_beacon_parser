@@ -96,6 +96,9 @@ class Parser(threading.Thread):
         logmsg = "=================\n"
         logmsg = "{}\n".format(datetime.now().isoformat(' '))
         logmsg += "{}\n".format(binascii.b2a_hex(bin_data))
+        if irc:
+            irc.send("{}".format(datetime.now().isoformat(' ')))
+            irc.send("{}".format(binascii.b2a_hex(bin_data)))
         payload = None
         if verify_packets:
             resp = cls.verify_packet(bin_data)
@@ -137,8 +140,6 @@ class Parser(threading.Thread):
         if logfile:
             with open(logfile, "a") as f:
                 f.write(logmsg)
-        if irc:
-            irc.send(logmsg)
 
 
     def run(self):
