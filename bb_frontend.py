@@ -64,11 +64,9 @@ class bb_frontend(threading.Thread):
         if data:
             print("\n" + "#="*40 + "#\n")
             print("Received packet {}".format(datetime.now().isoformat(' ')))
-            print("{}\n".format(data))
 
             if self.enable_auth:
                 hex_str = binascii.b2a_hex(data)
-                print len(hex_str)
                 self.irc_reporter.send("VERIFY,1,%s" % hex_str[0:len(hex_str)/2])
                 self.irc_reporter.send("VERIFY,2,%s" % hex_str[len(hex_str)/2:])
             
