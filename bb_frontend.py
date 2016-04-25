@@ -10,7 +10,7 @@ class bb_frontend(threading.Thread):
 
     LOGFILE = "log.txt"
     
-    def __init__(self, qth=None, config_file=None, enable_tracking=False, enable_auth=True):
+    def __init__(self, qth=None, config_file=None, enable_tracking=False, enable_auth=False):
         c = config.Config(config_file)
         self.qth = qth
         self.config = c.get_config()
@@ -66,9 +66,14 @@ class bb_frontend(threading.Thread):
             print("Received packet {}".format(datetime.now().isoformat(' ')))
             print("{}\n".format(data))
 
+            print binascii.b2a_hex(data)
 
             if self.enable_auth:
-                self.irc_reporter.send("AUTH:%s" % binascii.b2a_hex(data))
+                hex_str = binascii.b2a_hex(data)
+                print len(hex_str)
+                self.irc_reporter.send("AUTH,1,%s" % hex_str[0:len(hex_str)/2])
+                self.irc_reporter.send("AUTH,2,%s" % hex_str[len(hex_str)/2:])
+
             # Parse data
             try:
                 beacon_str = self.parser.parse_data(data)
@@ -104,7 +109,7 @@ Max elevation: {2:.2f} degrees""".format(datetime.fromtimestamp(next_pass), dura
 
 
 if __name__ == '__main__':
-    args_parser = argparse.ArgumentParser(description='AAUSAT4 Beacon Parser')
+    args_parser = argparse.ArgumentParser(description='AAUSAT4 Bluebox based Beacon Parser')
     args_parser.add_argument('--lat', dest='lat', required=False, type=float, default=None,
                              help='Latitude of ground station (N), e.g. 55.6167')
     args_parser.add_argument('--lon', dest='lon', required=False, type=float, default=None,
@@ -132,6 +137,6 @@ if __name__ == '__main__':
         except:
             raise Exception("latitude longitude and altitude arguments are required for tracking")
 
-    bb = bb_frontend(qth, args.config_file, not args.disable_tracking, args.enable_authentication)
+    bb = bb_frontend(qth, args.config_file, args.disable_tracking, args.enable_authentication)
     bb.run()
      
