@@ -135,14 +135,3 @@ if __name__ == '__main__':
     bb = bb_frontend(qth, args.config_file, not args.disable_tracking, args.enable_authentication)
     bb.run()
      
-    # if (not args.enable_doppler) or (args.lat and args.lon and args.alt):
-    #     # Start parser
-    #     qth = None
-    #     if args.enable_doppler:
-    #         qth = (args.lat, args.lon, args.alt)
-    #     config = config.Config()
-    #     bb_frontend(None).run()
-        
-    # else:
-    #     args_parser.print_help()
-    #     exit(1)

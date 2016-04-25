@@ -89,5 +89,3 @@ if __name__ == '__main__':
             print config
     
     tc = TestConfig()
-    while True:
-        pass
