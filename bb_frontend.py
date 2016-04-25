@@ -1,15 +1,16 @@
 import bluebox, fec
-import config, parser, tracker
+import config, parser, tracker, ircreporter
 import threading
 import argparse
 import time
+import binascii
 from datetime import datetime
 
 class bb_frontend(threading.Thread):
 
     LOGFILE = "log.txt"
     
-    def __init__(self, qth=None, config_file=None, enable_tracking=True):
+    def __init__(self, qth=None, config_file=None, enable_tracking=False, enable_auth=True):
         c = config.Config(config_file)
         self.qth = qth
         self.config = c.get_config()
@@ -26,9 +27,13 @@ class bb_frontend(threading.Thread):
         self.parser = parser.Parser()
         self.update(self.config)
         
-        if(self.enable_tracking):
+        if self.enable_tracking:
             self.tle = '\n'.join(self.config['tle'])
             self.tracker = tracker.Tracker(self.qth, self.tle)
+
+        self.enable_auth = enable_auth
+        if self.enable_auth:
+            self.irc_reporter = ircreporter.IRCReporter()
 
     def update(self, config):
         settings = config['radio_settings']
@@ -55,12 +60,15 @@ class bb_frontend(threading.Thread):
 
     def receive(self):
         with self.bb_lock:
-            data, rssi, freq = self.bluebox.receive(1000)
+            data, rssi, freq = self.bluebox.receive(50000)
         if data:
             print("\n" + "#="*40 + "#\n")
             print("Received packet {}".format(datetime.now().isoformat(' ')))
             print("{}\n".format(data))
-            
+
+
+            if self.enable_auth:
+                self.irc_reporter.send("AUTH:%s" % binascii.b2a_hex(data))
             # Parse data
             try:
                 beacon_str = self.parser.parse_data(data)
@@ -107,13 +115,11 @@ if __name__ == '__main__':
                              action='store_true',
                              required=False, default=False,
                              help='Disables doppler correction and pass planning.')
-    args_parser.add_argument('--enable-reporting', dest='enable_reporting',
+    args_parser.add_argument('--enable-authentication', dest='enable_authentication',
                              action='store_true',
                              required=False,
                              help='Enables automatic reporting of received packets.')
-    args_parser.add_argument('--config-file', dest='config_file',
-                             action='store_true',
-                             required=False,
+    args_parser.add_argument('--config-file', dest='config_file', required=False, type=str, default=None,
                              help='Use a confguration file from the local disk instead of the one provided by AAUSAT (on github).')
 
     args = args_parser.parse_args()
@@ -126,8 +132,7 @@ if __name__ == '__main__':
         except:
             raise Exception("latitude longitude and altitude arguments are required for tracking")
 
-    
-    bb = bb_frontend(qth, args.config_file, not args.disable_tracking)
+    bb = bb_frontend(qth, args.config_file, not args.disable_tracking, args.enable_authentication)
     bb.run()
      
     # if (not args.enable_doppler) or (args.lat and args.lon and args.alt):

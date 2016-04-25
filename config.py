@@ -17,7 +17,9 @@ class Config:
         self.observers = []
 
         if config_file:
-            pass
+            with open(config_file, 'r') as conf_file:
+                conf = json.loads(conf_file.read())
+                self.confif = self.set_config(conf, False)
         else:
             self.__auto_update_config__()
             
