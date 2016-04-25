@@ -60,7 +60,7 @@ class bb_frontend(threading.Thread):
 
     def receive(self):
         with self.bb_lock:
-            data, rssi, freq = self.bluebox.receive(50000)
+            data, rssi, freq = self.bluebox.receive(5000)
         if data:
             print("\n" + "#="*40 + "#\n")
             print("Received packet {}".format(datetime.now().isoformat(' ')))
@@ -69,8 +69,8 @@ class bb_frontend(threading.Thread):
             if self.enable_auth:
                 hex_str = binascii.b2a_hex(data)
                 print len(hex_str)
-                self.irc_reporter.send("AUTH,1,%s" % hex_str[0:len(hex_str)/2])
-                self.irc_reporter.send("AUTH,2,%s" % hex_str[len(hex_str)/2:])
+                self.irc_reporter.send("VERIFY,1,%s" % hex_str[0:len(hex_str)/2])
+                self.irc_reporter.send("VERIFY,2,%s" % hex_str[len(hex_str)/2:])
             
             # Parse data
             try:
@@ -118,7 +118,7 @@ if __name__ == '__main__':
                              action='store_true',
                              required=False, default=False,
                              help='Disables doppler correction and pass planning.')
-    args_parser.add_argument('--enable-authentication', dest='enable_authentication',
+    args_parser.add_argument('--enable-verification', dest='enable_verification',
                              action='store_true',
                              required=False,
                              help='Enables automatic reporting of received packets.')
@@ -135,6 +135,6 @@ if __name__ == '__main__':
             raise Exception("latitude longitude and altitude arguments are required for tracking")
 
 
-    bb = bb_frontend(qth, args.config_file, not args.disable_tracking, args.enable_authentication)
+    bb = bb_frontend(qth, args.config_file, not args.disable_tracking, args.enable_verification)
     bb.run()
      

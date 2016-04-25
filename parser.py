@@ -28,7 +28,8 @@ class Parser():
     
     def parse_data(self, bin_data):
         data, bit_corr, byte_corr = self.ec.deframe(bin_data)
-        
+            
+            
         payload = None
         if self.verify_packets:
             resp = self.verify_packet(bin_data)
