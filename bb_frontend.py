@@ -66,14 +66,12 @@ class bb_frontend(threading.Thread):
             print("Received packet {}".format(datetime.now().isoformat(' ')))
             print("{}\n".format(data))
 
-            print binascii.b2a_hex(data)
-
             if self.enable_auth:
                 hex_str = binascii.b2a_hex(data)
                 print len(hex_str)
                 self.irc_reporter.send("AUTH,1,%s" % hex_str[0:len(hex_str)/2])
                 self.irc_reporter.send("AUTH,2,%s" % hex_str[len(hex_str)/2:])
-
+            
             # Parse data
             try:
                 beacon_str = self.parser.parse_data(data)
@@ -132,11 +130,11 @@ if __name__ == '__main__':
     if args.disable_tracking:
         qth = None
     else:
-        try:
-            qth = (args.lat, args.lon, args.alt)
-        except:
+        qth = (args.lat, args.lon, args.alt)
+        if None in qth:
             raise Exception("latitude longitude and altitude arguments are required for tracking")
 
-    bb = bb_frontend(qth, args.config_file, args.disable_tracking, args.enable_authentication)
+
+    bb = bb_frontend(qth, args.config_file, not args.disable_tracking, args.enable_authentication)
     bb.run()
      
