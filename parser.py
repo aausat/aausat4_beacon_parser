@@ -1,7 +1,6 @@
 import bluebox, fec, predict
-import beacon, config
-import binascii, struct
-import time, aenum, threading
+import beacon, config, ircreporter
+import binascii, struct, aenum
 import argparse
 from datetime import datetime
 
@@ -18,9 +17,14 @@ class CSP_adress(aenum.Enum):
 
 class Parser():
     
-    def __init__(self, verify_packets=False):
+    def __init__(self, verify_packets=True):
         self.verify_packets = verify_packets
         self.ec = fec.PacketHandler()
+
+        self.verify_packets = verify_packets
+        if self.verify_packets:
+            self.irc_reporter = ircreporter.IRCReporter()
+
 
         
     def verify_packet(self, packet):
@@ -31,7 +35,8 @@ class Parser():
         
         payload = None
         if self.verify_packets:
-            resp = self.verify_packet(bin_data)
+            hex_str = binascii.b2a_hex(data)
+            self.irc_reporter.verify_packet(hex_str)
             # print resp['status'] - something linke: payload data from ss to ss
             #                                       : failed verification 
             #                                       : beacon packet
