@@ -69,7 +69,7 @@ if __name__ == '__main__':
     parser = Parser()
 
     if args.file_name:
-        pass
+        raise Exception("Not implemented")
     if args.data:
         bin_data = binascii.a2b_hex(args.data)
         beacon = parser.parse_data(bin_data)
