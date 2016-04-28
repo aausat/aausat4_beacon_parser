@@ -3,15 +3,22 @@ import time
 
 class Tracker:
 
-    def __init__(self, qth, tle):
+    def __init__(self, qth, tle, center_freq):
         self.qth = qth
         self.tle = tle
+        self.freq = center_freq
+        
+    def set_center_frequncy(self, center_freq):
+        self.freq = center_freq
+
     
     def get_doppler(self, obs_time=None):
         if not obs_time:
             obs_time = time.time()
         prediction = predict.observe(self.tle, self.qth, obs_time)
-        return prediction['doppler']
+        doppler = prediction['doppler']
+        correction = (self.freq/100E6) * doppler
+        return correction
 
     def in_range(self, obs_time=None):
         if not obs_time:
@@ -50,7 +57,7 @@ if __name__ == '__main__':
 2 32788  97.6100 154.3596 0013832 108.1455 252.1273 14.93074504432296"""
     qth = (55.6167, -12.6500, 5)
 
-    tracker = Tracker(qth, tle)
+    tracker = Tracker(qth, tle, 437.425e6)
 
     print tracker.in_range()
     print tracker.next_pass()

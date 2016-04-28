@@ -14,10 +14,8 @@ class bb_frontend(threading.Thread):
         c = config.Config(config_file)
         self.qth = qth
         self.config = c.get_config()
+        self.center_freq = self.config['radio_settings']['frequency']
 
-        if not config_file:
-            c.add_observer(self)
-        
         self.enable_tracking = enable_tracking
 
         self.bb_lock = threading.Lock()
@@ -25,20 +23,27 @@ class bb_frontend(threading.Thread):
             self.bluebox = bluebox.Bluebox()
             
         self.parser = parser.Parser()
-        self.update(self.config)
         
         if self.enable_tracking:
             self.tle = '\n'.join(self.config['tle'])
-            self.tracker = tracker.Tracker(self.qth, self.tle)
+            self.tracker = tracker.Tracker(self.qth, self.tle, self.center_freq)
 
         self.enable_auth = enable_auth
         if self.enable_auth:
             self.irc_reporter = ircreporter.IRCReporter()
 
+        self.update(self.config)
+        if not config_file:
+            c.add_observer(self)
+
+
     def update(self, config):
         settings = config['radio_settings']
+        self.center_freq = settings['frequency']
+
+        self.tracker.set_center_frequncy(self.center_freq)
+        
         with self.bb_lock:            
-            self.center_freq = settings['frequency']
             self.bluebox.set_frequency(self.center_freq)
             time.sleep(0.01)
             self.bluebox.set_modindex(settings['modindex'])
